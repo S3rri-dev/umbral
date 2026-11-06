@@ -1,0 +1,11 @@
+name: Propuesta
+description: Proponer una herramienta o mejora de Umbral.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Qué quieres poder hacer
+      description: Describe el problema y cuándo te ocurre.
+    validations:
+      required: true

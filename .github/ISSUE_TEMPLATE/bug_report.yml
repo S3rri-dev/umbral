@@ -1,0 +1,18 @@
+name: Problema
+description: Informar de un problema reproducible en Umbral.
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Versiones de Umbral y macOS
+      placeholder: Umbral 1.0.0, macOS 26
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos y resultado
+      description: Incluye los pasos, el resultado observado y el esperado. Oculta información personal en las capturas.
+    validations:
+      required: true

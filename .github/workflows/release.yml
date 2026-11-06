@@ -1,0 +1,56 @@
+name: Preparar release
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Etiqueta existente, por ejemplo v1.0.0
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ inputs.tag }}
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: macos-26
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verificar etiqueta y versión
+        env:
+          TAG: ${{ inputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="$(plutil -extract CFBundleShortVersionString raw -o - Info.plist)"
+          test "$TAG" = "v$version"
+          test "$(git rev-parse HEAD)" = "$(git rev-parse "refs/tags/$TAG^{commit}")"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Ya hay una publicación para esa etiqueta."
+            exit 1
+          fi
+      - run: ./scripts/package.sh
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: umbral-release
+          path: |
+            dist/*.dmg
+            dist/*.zip
+            dist/*-manifest.json
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
+      - name: Crear borrador
+        env:
+          TAG: ${{ inputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="$(plutil -extract CFBundleShortVersionString raw -o - Info.plist)"
+          gh release create "$TAG" dist/*.dmg dist/*.zip dist/*-manifest.json dist/SHA256SUMS.txt \
+            --verify-tag --draft --title "Umbral $version" --notes-file "docs/releases/$version.md"

@@ -1,0 +1,6 @@
+Umbral para macOS Apple Silicon
+Código GPL-3.0-or-later
+https://github.com/S3rri-dev/umbral
+
+La publicación incluye el código fuente del commit de la versión.
+La aplicación de la 1.0.0 tiene firma ad hoc y no está notarizada.
