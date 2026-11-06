@@ -18,34 +18,21 @@ Español · [English](README.en.md)
 
 ![Dos piezas de Fuga en grafito y aluminio](docs/images/hero.jpg)
 
-## Qué puedes usar en la 1.0.0
+## Umbral 2.0.0
 
-- **Bienvenida.** Elige entre explorar el catálogo, abrir Ventanas o ir a Audio.
-- **Catálogo con búsqueda.** Consulta las fichas de las herramientas previstas y sus ejemplos.
-- **Panel rápido.** Abre el catálogo y los ajustes desde Fuga en la barra de menús.
-- **Apariencia.** Elige tema y color de acento por separado. Grafito es el valor inicial y **Sistema** sigue el color de macOS.
+La bienvenida te deja elegir entre tres configuraciones o seleccionar las herramientas una por una. Desde **Ajustes → Funciones** puedes cambiar esa selección y revisar qué permisos usa cada herramienta.
 
-Salir al cerrar, maximizar dentro del escritorio y el mezclador por app son **fichas en preparación**. La biblioteca de herramientas empieza vacía. [Roadmap](docs/ROADMAP.md)
-
-## Así se ve
-
-Vistas renderizadas a partir del código SwiftUI de Umbral. La portada y la imagen de publicación son ilustraciones generadas. [Imágenes y procedencia](docs/images/README.md)
-
-| Bienvenida | Ajustes de apariencia |
-| --- | --- |
-| ![Bienvenida de Umbral con el símbolo Fuga](docs/images/welcome.png) | ![Apariencia de Umbral con tema claro y acento naranja](docs/images/appearance.png) |
+El catálogo reúne 43 herramientas. Incluye ventanas, Dock, portapapeles, audio, energía, grabación, Dynamic Island y monitorización del sistema. [Alcance de la versión](docs/ROADMAP.md)
 
 ## Instalar
 
-1. Descarga **Umbral-1.0.0-arm64.dmg** de [Releases](https://github.com/S3rri-dev/umbral/releases/latest).
-2. Abre el DMG y arrastra **Umbral.app** a Aplicaciones. También hay un ZIP con la app.
-3. Abre Umbral y recorre la bienvenida.
+Abre el DMG de la versión que quieras instalar y arrastra **Umbral.app** a Aplicaciones. La 2.0.0 se puede construir localmente con `./scripts/package-dmg.sh`.
 
-Apple Silicon. Objetivo mínimo de compilación macOS 14. La edición lleva **firma ad hoc**, sin Developer ID ni notarización. Consulta las comprobaciones y el comportamiento del primer arranque. [Instalación](docs/INSTALL.md) · [Verificación](docs/VERIFICATION.md)
+Apple Silicon. Objetivo mínimo de compilación macOS 14. El DMG local lleva firma ad hoc. [Instalación](docs/INSTALL.md) · [Verificación](docs/VERIFICATION.md)
 
 ## Privacidad y permisos
 
-Umbral guarda tema, acento y estado de bienvenida en las preferencias de macOS. La app funciona localmente y esta versión se usa sin permisos especiales. [Privacidad](docs/PRIVACY.md) · [Permisos](docs/PERMISSIONS.md) · [Preferencias](docs/DATA.md)
+Las herramientas solicitan los permisos que requieren según tu selección. Puedes consultar su finalidad en la bienvenida o en Ajustes. [Privacidad](docs/PRIVACY.md) · [Permisos](docs/PERMISSIONS.md) · [Preferencias](docs/DATA.md)
 
 ## Compilar y probar
 

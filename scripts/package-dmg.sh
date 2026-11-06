@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 ./scripts/build.sh
 app_name="$(plutil -extract CFBundleName raw -o - Info.plist)"
 version="$(plutil -extract CFBundleShortVersionString raw -o - Info.plist)"
-arch="$(lipo -archs "dist/$app_name.app/Contents/MacOS/MacUtilities")"
+arch="$(lipo -archs "dist/$app_name.app/Contents/MacOS/$(plutil -extract CFBundleExecutable raw -o - Info.plist)")"
 test "$arch" = arm64
 stage="$(mktemp -d "${TMPDIR:-/tmp}/umbral-dmg.XXXXXX")"
 trap 'rm -rf "$stage"' EXIT

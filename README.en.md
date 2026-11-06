@@ -14,24 +14,13 @@ A native macOS utility catalog with a menu bar panel.
 
 ![Fuga in graphite and aluminum](docs/images/hero.jpg)
 
-## What you can use in 1.0.0
+## Umbral 2.0.0
 
-- A four-step welcome with entry points to the catalog, Windows or Audio.
-- A searchable catalog of planned utilities.
-- A menu bar panel that opens the catalog and preferences.
-- Separate appearance and accent settings. Graphite is the default accent. System follows macOS.
-
-Quit on close, desktop maximization and per-app audio are marked as planned. The library starts empty. The app interface is in Spanish. [Roadmap](docs/ROADMAP.md)
-
-| Welcome | Appearance |
-| --- | --- |
-| ![Umbral's welcome view](docs/images/welcome.png) | ![Umbral's light theme and orange accent](docs/images/appearance.png) |
-
-These views are rendered from Umbral's SwiftUI code. The cover art is generated. [Image credits](docs/images/README.md)
+Choose a preset or pick tools individually during setup. **Settings → Features** manages your selection and explains the permissions each tool uses. The catalog covers 43 tools for windows, Dock, clipboard, audio, power, recording, Dynamic Island and system monitoring.
 
 ## Install and build
 
-Download the ARM64 DMG from [Releases](https://github.com/S3rri-dev/umbral/releases/latest) and drag Umbral to Applications. The package targets Apple Silicon and macOS 14 or later. It is **ad hoc signed**, without Developer ID or notarization. [Installation](docs/INSTALL.md) · [Verification](docs/VERIFICATION.md)
+Open the ARM64 DMG and drag Umbral to Applications. Build the 2.0.0 DMG locally with `./scripts/package-dmg.sh`. The local bundle targets Apple Silicon and macOS 14 or later and uses an ad hoc signature. [Installation](docs/INSTALL.md) · [Verification](docs/VERIFICATION.md)
 
 ```sh
 git clone https://github.com/S3rri-dev/umbral.git
@@ -40,6 +29,6 @@ cd umbral
 open dist/Umbral.app
 ```
 
-Umbral stores appearance and welcome settings locally. The app uses no account or telemetry. [Privacy](docs/PRIVACY.md) · [Architecture](docs/ARCHITECTURE.md) · [Release process](docs/RELEASING.md)
+Umbral stores preferences and tool data locally. Some optional tools can contact network providers when enabled. [Privacy](docs/PRIVACY.md) · [Architecture](docs/ARCHITECTURE.md) · [Release process](docs/RELEASING.md)
 
 Copyright © 2026 S3rri-dev and contributors. Code is **GPL-3.0-or-later**. [License](LICENSE) · [Brand identity](TRADEMARKS.md)
