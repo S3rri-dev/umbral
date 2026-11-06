@@ -2,8 +2,10 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-swift build --configuration release
-bin_dir="$(swift build --configuration release --show-bin-path)"
+minimum="$(plutil -extract LSMinimumSystemVersion raw -o - Info.plist)"
+target="arm64-apple-macosx$minimum"
+swift build --configuration release --triple "$target"
+bin_dir="$(swift build --configuration release --triple "$target" --show-bin-path)"
 app_name="$(plutil -extract CFBundleName raw -o - Info.plist)"
 app_dir="$PWD/dist/$app_name.app"
 resources="$app_dir/Contents/Resources"
@@ -20,6 +22,7 @@ done
 iconutil -c icns "$icon_dir/AppIcon.iconset" -o "$resources/AppIcon.icns"
 install -m 755 "$bin_dir/MacUtilities" "$app_dir/Contents/MacOS/MacUtilities"
 install -m 644 Info.plist "$app_dir/Contents/Info.plist"
+strip -S "$app_dir/Contents/MacOS/MacUtilities"
 codesign --force --sign - "$app_dir"
 codesign --verify --strict "$app_dir"
 printf '%s\n' "$app_dir"

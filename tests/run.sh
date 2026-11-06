@@ -23,6 +23,10 @@ test -s "$resources/AppIcon.icns"
 test -s "$resources/BrandMark.png"
 test -s "$resources/MenuMark.png"
 codesign --verify --strict "$app"
+if nm -pa "$binary" | grep -E '/Users/|/private/var/folders/' >/dev/null; then
+    printf '%s\n' 'El ejecutable contiene rutas locales en sus símbolos.' >&2
+    exit 1
+fi
 
 python3 - <<'PY'
 from xml.etree import ElementTree as ET
