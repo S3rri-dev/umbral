@@ -12,13 +12,16 @@ struct NotchMascotSettings: View {
     @ObservedObject private var l10n = L10n.shared
     /// Redraws when the island or the Command Bar is installed or removed.
     @ObservedObject private var features = FeatureRuntime.shared
+    @ObservedObject private var island = NotchService.shared
+    @AppStorage(DefaultsKey.notchCatLastMeal) private var lastMeal = 0.0
+    @AppStorage(DefaultsKey.notchCatSounds) private var catSounds = false
     @AppStorage(DefaultsKey.notchEnabled) private var islandEnabled = false
     @AppStorage(DefaultsKey.notchSilhouette) private var silhouette = NotchSilhouette.capsule.rawValue
     @AppStorage(DefaultsKey.notchMascotEnabled) private var enabled = false
     @AppStorage(DefaultsKey.notchMascotVisits) private var visits = true
     @AppStorage(DefaultsKey.notchMascotReactions) private var reactions = true
-    @AppStorage(DefaultsKey.notchMascotHidesWhenIdle) private var hidesWhenIdle = true
-    @AppStorage(DefaultsKey.notchMascotStyle) private var style = NotchMascotStyle.minimal.rawValue
+    @AppStorage(DefaultsKey.notchMascotHidesWhenIdle) private var hidesWhenIdle = false
+    @AppStorage(DefaultsKey.notchMascotStyle) private var style = NotchMascotStyle.cat.rawValue
     @AppStorage(DefaultsKey.notchMascotShape) private var shape = NotchMascotShape.ball.rawValue
     @AppStorage(DefaultsKey.notchMascotPalette) private var palette = NotchMascotPalette.pearl.rawValue
     @AppStorage(DefaultsKey.notchMascotSide) private var side = NotchMascotSide.left.rawValue
@@ -31,7 +34,7 @@ struct NotchMascotSettings: View {
     private var editor: NotchEditorStrings { FeatureStrings.notchEditor(l10n.language) }
 
     private var look: NotchMascotLook {
-        NotchMascotLook(style: NotchMascotStyle(rawValue: style) ?? .minimal,
+        NotchMascotLook(style: NotchMascotStyle(rawValue: style) ?? .cat,
                         shape: NotchMascotShape(rawValue: shape) ?? .ball,
                         palette: NotchMascotPalette(rawValue: palette) ?? .pearl)
     }
@@ -56,7 +59,10 @@ struct NotchMascotSettings: View {
                 if !islandOn { islandNote }
                 NotchMascotStageCard(look: look, side: restingSide, awake: enabled, canGreet: enabled && islandOn,
                                      visits: visits, reactions: reactions, hides: hidesWhenIdle, text: text,
-                                     language: l10n.language)
+                                     language: l10n.language,
+                                     careReaction: look.style == .cat ? island.catCareReaction : nil,
+                                     napping: look.style == .cat && island.catNapping)
+                if look.style == .cat { careCard }
                 appearance
                 behavior
                 commandBarCard
@@ -109,6 +115,28 @@ struct NotchMascotSettings: View {
         .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
+    private var careCard: some View {
+        let care = NotchCatCareStrings(l10n.language)
+        return SettingsCard(title: care.care) {
+            TimelineView(.periodic(from: .now, by: 60)) { context in
+                let hungry = NotchCatCare.isHungry(lastMeal: lastMeal, at: context.date)
+                SettingsRow(symbol: island.catNapping ? "moon.zzz" : "pawprint",
+                            title: hungry ? care.hungry : care.fed,
+                            caption: island.catNapping ? care.sleeping : nil) { EmptyView() }
+            }
+            FlowLayoutLite(spacing: 8) {
+                Button(action: island.feedCat) { Label(care.feed, systemImage: "heart") }
+                Button(action: island.meowCat) { Label(care.meow, systemImage: "waveform") }
+                Button(action: island.toggleCatNap) {
+                    Label(island.catNapping ? care.wake : care.nap, systemImage: island.catNapping ? "sun.max" : "moon")
+                }
+            }
+            .padding(.leading, settingsRowTextInset)
+            .disabled(!enabled || !islandOn)
+            switchRow("speaker.wave.2", care.sound, caption: care.soundHint, isOn: $catSounds)
+        }
+    }
+
     // MARK: Appearance
 
     private var appearance: some View {
@@ -116,7 +144,7 @@ struct NotchMascotSettings: View {
             SettingsRow(symbol: "paintpalette", title: text.style) { EmptyView() }
             HStack(spacing: 10) {
                 ForEach(NotchMascotStyle.allCases) { item in
-                    NotchMascotChoiceTile(title: text.style(item), selected: look.style == item) {
+                    NotchMascotChoiceTile(title: text.style(item, language: l10n.language), selected: look.style == item) {
                         style = item.rawValue
                     } preview: {
                         NotchMascotView(look: NotchMascotLook(style: item, shape: look.shape, palette: look.palette),
@@ -278,6 +306,8 @@ private struct NotchMascotStageCard: View {
     let hides: Bool
     let text: NotchMascotStrings
     let language: AppLanguage
+    let careReaction: NotchMascotReactionEvent?
+    let napping: Bool
     @State private var visit: NotchMascotVisit?
     @State private var reaction: NotchMascotReactionEvent?
     @State private var playing: NotchMascotMoment?
@@ -292,7 +322,8 @@ private struct NotchMascotStageCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             GeometryReader { proxy in
-                NotchMascotStage(look: look, side: side, awake: awake, visit: visit, reaction: reaction,
+                NotchMascotStage(look: look, side: side, awake: awake && !napping, visit: visit,
+                                 reaction: [reaction, careReaction].compactMap { $0 }.max { $0.start < $1.start },
                                  caption: playing.map { (text.moment($0, language: language), $0.symbol) },
                                  width: proxy.size.width)
                     .contentShape(Rectangle())

@@ -166,9 +166,13 @@ final class NotchNotificationService: ObservableObject {
         trimIcons()
     }
 
-    /// The island shows this banner, so its original can leave the screen.
+    func isCallAlert(_ id: UUID) -> Bool {
+        NotchNotificationSupport.isCallApplication(sourceApplications[id])
+    }
+
+    /// Phone and FaceTime own their call controls, so their banners stay on screen.
     func hideNative(_ id: UUID) {
-        guard monitoring, NotchNotificationSupport.dismissesNative(),
+        guard monitoring, NotchNotificationSupport.dismissesNative(), !isCallAlert(id),
               items.contains(where: { $0.id == id }) else { return }
         guard NotchNotificationSupport.movesNativeWindow else {
             if closingIDs.insert(id).inserted { closeNative(id) }

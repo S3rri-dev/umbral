@@ -820,6 +820,7 @@ enum DefaultsKey {
     static let notchShowPlayingMusic = "notchShowPlayingMusic"
     static let notchIncludeOtherPlayers = "notchIncludeOtherPlayers"
     static let notchMusicShowVolume = "notchMusicShowVolume"
+    static let notchMusicAlwaysShowTitle = "notchMusicAlwaysShowTitle"
     static let notchPreferredPlayer = "notchPreferredPlayer"
     static let notchDefaultProfileInitialized = "notchDefaultProfileInitialized" // local migration marker; never backed up
     static let notchInitialExtensionsInstalled = "notchInitialExtensionsInstalled" // local first-install marker; never backed up
@@ -839,6 +840,7 @@ enum DefaultsKey {
     static let notchCameraFitWidth = "notchCameraFitWidth"
     static let notchCameraFitHeight = "notchCameraFitHeight"
     static let notchHapticFeedback = "notchHapticFeedback"
+    static let notchMotionProfile = "notchMotionProfile"
     static let notchTranslucentBackground = "notchTranslucentBackground"
     static let notchShelf = "notchShelf"
     static let notchDragReveal = "notchDragReveal"
@@ -958,6 +960,8 @@ enum DefaultsKey {
     static let notchMascotVisits = "notchMascotVisits" // passes through the island now and then
     static let notchMascotReactions = "notchMascotReactions" // comes out to react to what the island sees
     static let notchMascotStyle = "notchMascotStyle" // NotchMascotStyle.rawValue
+    static let notchCatLastMeal = "notchCatLastMeal"
+    static let notchCatSounds = "notchCatSounds"
     static let notchMascotShape = "notchMascotShape" // NotchMascotShape.rawValue
     static let notchMascotPalette = "notchMascotPalette" // NotchMascotPalette.rawValue
     static let notchMascotSide = "notchMascotSide" // NotchMascotSide.rawValue, beside the camera
@@ -1438,6 +1442,7 @@ enum Defaults {
         DefaultsKey.notchShowPlayingMusic: true,
         DefaultsKey.notchIncludeOtherPlayers: true,
         DefaultsKey.notchMusicShowVolume: false,
+        DefaultsKey.notchMusicAlwaysShowTitle: true,
         DefaultsKey.notchPreferredPlayer: "",
         DefaultsKey.notchIdleContent: NotchIdleContent.music.rawValue,
         DefaultsKey.notchHiddenControls: NotchControlItem.defaultHidden,
@@ -1452,6 +1457,7 @@ enum Defaults {
         DefaultsKey.notchCameraFitWidth: 0.0,
         DefaultsKey.notchCameraFitHeight: 0.0,
         DefaultsKey.notchHapticFeedback: true,
+        DefaultsKey.notchMotionProfile: NotchMotionProfile.standard.rawValue,
         DefaultsKey.notchTranslucentBackground: false,
         DefaultsKey.notchShelf: true,
         DefaultsKey.notchDragReveal: true,
@@ -1557,12 +1563,13 @@ enum Defaults {
         DefaultsKey.notchMascotEnabled: false,
         DefaultsKey.notchMascotVisits: true,
         DefaultsKey.notchMascotReactions: true,
-        DefaultsKey.notchMascotStyle: NotchMascotStyle.minimal.rawValue,
+        DefaultsKey.notchMascotStyle: NotchMascotStyle.cat.rawValue,
+        DefaultsKey.notchCatSounds: false,
         DefaultsKey.notchMascotShape: NotchMascotShape.ball.rawValue,
         DefaultsKey.notchMascotPalette: NotchMascotPalette.pearl.rawValue,
         DefaultsKey.notchMascotSide: NotchMascotSide.left.rawValue,
         DefaultsKey.notchMascotVisitFrequency: NotchMascotVisitFrequency.normal.rawValue,
-        DefaultsKey.notchMascotHidesWhenIdle: true,
+        DefaultsKey.notchMascotHidesWhenIdle: false,
         DefaultsKey.notchCommandBar: true,
         DefaultsKey.notchCommandBarStyle: NotchCommandBarStyle.droplet.rawValue,
         DefaultsKey.notchHideInCaptures: false,

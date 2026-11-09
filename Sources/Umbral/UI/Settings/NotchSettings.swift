@@ -33,8 +33,8 @@ struct NotchSettings: View {
     @AppStorage(DefaultsKey.notchLiveEqualizer) private var liveEqualizer = false
     @AppStorage(DefaultsKey.notchEnabled) private var enabled = false
     @AppStorage(DefaultsKey.notchMascotEnabled) private var mascotEnabled = false
-    @AppStorage(DefaultsKey.notchMascotHidesWhenIdle) private var mascotHidesWhenIdle = true
-    @AppStorage(DefaultsKey.notchMascotStyle) private var mascotStyle = NotchMascotStyle.minimal.rawValue
+    @AppStorage(DefaultsKey.notchMascotHidesWhenIdle) private var mascotHidesWhenIdle = false
+    @AppStorage(DefaultsKey.notchMascotStyle) private var mascotStyle = NotchMascotStyle.cat.rawValue
     @AppStorage(DefaultsKey.notchMascotShape) private var mascotShape = NotchMascotShape.ball.rawValue
     @AppStorage(DefaultsKey.notchMascotPalette) private var mascotPalette = NotchMascotPalette.pearl.rawValue
     @AppStorage(DefaultsKey.notchMascotSide) private var mascotSide = NotchMascotSide.left.rawValue
@@ -68,6 +68,7 @@ struct NotchSettings: View {
     @AppStorage(DefaultsKey.notchShowPlayingMusic) private var showPlayingMusic = true
     @AppStorage(DefaultsKey.notchIncludeOtherPlayers) private var includeOtherPlayers = true
     @AppStorage(DefaultsKey.notchMusicShowVolume) private var musicShowVolume = false
+    @AppStorage(DefaultsKey.notchMusicAlwaysShowTitle) private var musicAlwaysShowTitle = true
     @AppStorage(DefaultsKey.notchPreferredPlayer) private var preferredPlayer = NotchPreferredPlayer.automatic
     @AppStorage(DefaultsKey.notchIdleContent) private var idle = NotchIdleContent.music.rawValue
     @AppStorage(DefaultsKey.notchLowBatteryTint) private var lowBatteryTint = false
@@ -91,6 +92,7 @@ struct NotchSettings: View {
     @AppStorage(DefaultsKey.notchCapsuleFitHeight) private var capsuleFitHeight = 0.0
     @AppStorage(DefaultsKey.notchCapsuleFitDrop) private var capsuleFitDrop = 0.0
     @AppStorage(DefaultsKey.notchHapticFeedback) private var hapticFeedback = true
+    @AppStorage(DefaultsKey.notchMotionProfile) private var motionProfile = NotchMotionProfile.standard
     @AppStorage(DefaultsKey.notchTranslucentBackground) private var translucentBackground = false
     @AppStorage(DefaultsKey.notchLiquidGlassEnabled) private var liquidGlass = false
     @AppStorage(DefaultsKey.notchShelf) private var shelfWindow = true
@@ -120,7 +122,8 @@ struct NotchSettings: View {
          String(calendarTimeLeft),
          String(notificationsEnabled), String(dismissNativeNotifications), String(gesturesEnabled),
          String(lyricsEnabled), String(lyricsOnline), String(queueEnabled), String(liveEqualizer),
-         String(showPlayingMusic), String(includeOtherPlayers), String(musicShowVolume), idle, hiddenControls, controlOrder, size,
+         String(showPlayingMusic), String(includeOtherPlayers), String(musicShowVolume), String(musicAlwaysShowTitle),
+         idle, hiddenControls, controlOrder, size,
          String(timerEnabled), String(timerSoundEnabled), String(hideTimerCountdown),
          String(cameraEnabled), String(accessoriesEnabled), String(outlineEnabled), String(hideMenuBarGap),
          String(customWidth), String(customHeight), String(cameraFitWidth), String(cameraFitHeight),
@@ -430,6 +433,13 @@ struct NotchSettings: View {
         case .music:
             let music = FeatureStrings.notchMusicExtras(l10n.language)
             switchRow("music.note", text.playingMusic, isOn: $showPlayingMusic)
+            if showPlayingMusic {
+                switchRow("text.line.first.and.arrowtriangle.forward",
+                          l10n.language == .es ? "Mostrar el título en la isla cerrada" : "Show title in the closed island",
+                          caption: l10n.language == .es ? "Muestra la canción y el artista si hay espacio."
+                                                        : "Shows the song and artist when there is room.",
+                          isOn: $musicAlwaysShowTitle)
+            }
             switchRow("play.rectangle", music.includeOtherPlayers, isOn: $includeOtherPlayers)
             SettingsFeatureSwitchRow(symbol: "speaker.wave.2", title: music.showVolume,
                                      isOn: $musicShowVolume, feature: .mixer)
@@ -461,7 +471,13 @@ struct NotchSettings: View {
             let notifications = FeatureStrings.notchNotifications(l10n.language)
             switchRow("bell.slash", notifications.hideSystemBanner, caption: notifications.hideSystemBannerHint,
                       isOn: $dismissNativeNotifications)
-            if notificationsEnabled, !permissions.accessibility { PermissionRow(kind: .accessibility) }
+            if notificationsEnabled {
+                SettingsRow(symbol: "phone", title: l10n.language == .es ? "Avisos de Teléfono y FaceTime" : "Phone and FaceTime alerts",
+                            caption: l10n.language == .es
+                                ? "La isla muestra los avisos que recibe. El aviso de macOS conserva sus controles."
+                                : "The island shows received alerts. The macOS alert keeps its controls.") { EmptyView() }
+                if !permissions.accessibility { PermissionRow(kind: .accessibility) }
+            }
         case .downloads:
             NotchDownloadsSettingsControls()
                 .toggleStyle(TrailingSwitchToggleStyle())
@@ -684,6 +700,17 @@ struct NotchSettings: View {
                 SettingsFeatureSwitchRow(symbol: "hand.draw", title: FeatureStrings.notchGestures(l10n.language).title,
                                          caption: gesturesEnabled ? FeatureStrings.notchGestures(l10n.language).hint : nil,
                                          isOn: $gesturesEnabled, feature: .notchGestures)
+                let motionTitle = l10n.language == .es ? "Animación de la isla" : "Island animation"
+                SettingsRow(symbol: "waveform.path", title: motionTitle) {
+                    Picker(motionTitle, selection: $motionProfile) {
+                        ForEach(NotchMotionProfile.allCases, id: \.self) { profile in
+                            Text(profile.title(l10n.language)).tag(profile)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                    .accessibilityIdentifier("notch.motionProfile")
+                }
                 switchRow("waveform.path", text.hapticFeedback, isOn: $hapticFeedback)
                 SettingsRow(symbol: "arrow.uturn.backward", title: editor.reopening) {
                     Picker(editor.reopening, selection: Binding(get: {
@@ -938,7 +965,7 @@ struct NotchSettings: View {
 
     /// The companion where it rests, beside a camera drawn black on black.
     private var restingMascot: some View {
-        let look = NotchMascotLook(style: NotchMascotStyle(rawValue: mascotStyle) ?? .minimal,
+        let look = NotchMascotLook(style: NotchMascotStyle(rawValue: mascotStyle) ?? .cat,
                                    shape: NotchMascotShape(rawValue: mascotShape) ?? .ball,
                                    palette: NotchMascotPalette(rawValue: mascotPalette) ?? .pearl)
         let right = NotchMascotSide(rawValue: mascotSide) == .right

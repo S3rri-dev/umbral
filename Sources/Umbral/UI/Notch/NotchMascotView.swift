@@ -54,6 +54,8 @@ final class NotchMascotRig: NSObject {
     private let face = CALayer()
     private let leftEye = CAShapeLayer()
     private let rightEye = CAShapeLayer()
+    private let catMarkings = CAShapeLayer()
+    private let catMouth = CAShapeLayer()
     private var blinks = 0
     /// It grew sleepy on its own after a long rest, rather than being shown
     /// so, and anything that happens wakes it.
@@ -77,9 +79,13 @@ final class NotchMascotRig: NSObject {
         attention.addSublayer(face)
         face.addSublayer(leftEye)
         face.addSublayer(rightEye)
+        face.addSublayer(catMarkings)
+        face.addSublayer(catMouth)
+        catMouth.opacity = 0
+        catMarkings.lineCap = .round
         fill.mask = fillMask
         for layer in [root, hopper, squasher, tilter, attention, face, ears, antenna, bulb, fill, fillMask, visor, shine,
-                      leftEye, rightEye] {
+                      leftEye, rightEye, catMarkings, catMouth] {
             layer.actions = Self.noActions
         }
         shine.fillColor = NotchMascotColor.shine.cgColor
@@ -115,12 +121,13 @@ final class NotchMascotRig: NSObject {
         }
         let box = CGRect(x: 0, y: 0, width: size, height: size)
         root.bounds = box
-        for layer in [hopper, squasher, tilter, attention, face, ears, antenna, bulb, fill, fillMask, visor, shine] {
+        for layer in [hopper, squasher, tilter, attention, face, ears, antenna, bulb, fill, fillMask, visor, shine, catMarkings, catMouth] {
             layer.frame = box
             layer.contentsScale = scale
         }
         root.contentsScale = scale
         let robot = look.style == .robot
+        let cat = look.style == .cat
         let palette = look.palette
         fill.colors = [palette.light.cgColor, palette.shade.cgColor]
         fill.startPoint = CGPoint(x: 0.5, y: 0)
@@ -146,13 +153,25 @@ final class NotchMascotRig: NSObject {
                 eye.shadowOffset = .zero
             }
         } else {
-            fillMask.path = NotchMascotGeometry.body(look.shape, size: size)
+            fillMask.path = cat ? NotchMascotGeometry.catHead(size: size)
+                : NotchMascotGeometry.body(look.shape, size: size)
             for eye in [leftEye, rightEye] {
                 eye.fillColor = NotchMascotColor.ink.cgColor
                 eye.shadowOpacity = 0
             }
         }
         for layer in [ears, antenna, bulb, visor] { layer.isHidden = !robot }
+        catMarkings.isHidden = !cat
+        catMouth.isHidden = !cat
+        if cat {
+            catMarkings.path = NotchMascotGeometry.catMarkings(size: size)
+            catMarkings.fillColor = NotchMascotColor.ink.cgColor
+            catMarkings.strokeColor = NotchMascotColor.ink.cgColor
+            catMarkings.lineWidth = max(0.45, size * 0.03)
+            catMouth.path = CGPath(ellipseIn: CGRect(x: size * 0.44, y: size * 0.72,
+                                                     width: size * 0.12, height: size * 0.15), transform: nil)
+            catMouth.fillColor = NotchMascotColor.ink.cgColor
+        }
         shine.path = NotchMascotGeometry.shine(look.face, size: size)
         shine.isHidden = robot
         let face = look.face
@@ -162,6 +181,16 @@ final class NotchMascotRig: NSObject {
         leftEye.contentsScale = scale
         rightEye.contentsScale = scale
         apply(mood.expression, animated: false)
+    }
+
+    private func showMeow() {
+        flashFace(.happy, duration: NotchMascotReaction.meow.length)
+        guard look.style == .cat else { return }
+        let mouth = CAKeyframeAnimation(keyPath: "opacity")
+        mouth.values = reduceMotion ? [0, 1, 1, 0] : [0, 1, 0.65, 0]
+        mouth.keyTimes = [0, 0.12, 0.72, 1]
+        mouth.duration = NotchMascotReaction.meow.length
+        catMouth.add(mouth, forKey: "meow")
     }
 
     // MARK: Faces
@@ -511,6 +540,7 @@ final class NotchMascotRig: NSObject {
             case .perk, .bounce: flashFace(.alert, duration: 1)
             case .ready: flashFace(.determined, duration: 1)
             case .groove: flashFace(.happy, duration: 1.4)
+            case .meow: showMeow()
             }
             return
         }
@@ -594,6 +624,8 @@ final class NotchMascotRig: NSObject {
             nod.duration = 0.5
             nod.beginTime = now + 0.12
             squasher.add(nod, forKey: "nod")
+        case .meow:
+            showMeow()
         case .groove:
             // It hears the music: smiling eyes, a bob on every beat and a
             // lean one way and the other, landing a little squashed.

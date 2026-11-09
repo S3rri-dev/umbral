@@ -67,8 +67,12 @@ struct NotchMascotStrings {
     /// More words a search finds its page by.
     let keywords: String
 
-    func style(_ style: NotchMascotStyle) -> String {
-        style == .robot ? robot : minimal
+    func style(_ style: NotchMascotStyle, language: AppLanguage) -> String {
+        switch style {
+        case .cat: NotchCatCareStrings(language).cat
+        case .minimal: minimal
+        case .robot: robot
+        }
     }
 
     func shape(_ shape: NotchMascotShape) -> String {

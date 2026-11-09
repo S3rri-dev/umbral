@@ -65,7 +65,8 @@ struct NotchNoticeView: View {
     @ViewBuilder private var leading: some View {
         if let content = notice.notification {
             HStack(spacing: NotchNotificationBannerLayout.spacing) {
-                NotchNotificationAppIcon(app: content.app, size: min(NotchNotificationBannerLayout.iconSize, geometry.stripHeight - 4))
+                NotchNoticeNotificationIcon(app: content.app, symbol: notice.symbol,
+                                            size: min(NotchNotificationBannerLayout.iconSize, geometry.stripHeight - 4))
                 Text(content.compactTitle)
                     .font(Font(NotchNotificationBannerLayout.titleFont as CTFont))
                     .lineLimit(1)
@@ -137,6 +138,24 @@ struct NotchNoticeView: View {
                 .lineLimit(1)
                 .truncationMode(notice.event == .accessory ? .middle : .tail)
                 .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+    }
+}
+
+struct NotchNoticeNotificationIcon: View {
+    let app: String
+    let symbol: String
+    let size: CGFloat
+
+    var body: some View {
+        if symbol == "phone.fill" {
+            Image(systemName: symbol)
+                .font(.system(size: size * 0.55, weight: .semibold))
+                .foregroundStyle(.green)
+                .frame(width: size, height: size)
+                .background(.green.opacity(0.18), in: Circle())
+        } else {
+            NotchNotificationAppIcon(app: app, size: size)
         }
     }
 }

@@ -2859,6 +2859,22 @@ struct NotchSessionState {
     var hearsLockChange: Bool { !sleeping && onConsole && !displaysSleeping && !screenSaverRunning }
 }
 
+enum NotchMotionProfile: String, CaseIterable {
+    case standard, soft, elastic
+
+    static func current(in defaults: UserDefaults = .standard) -> Self {
+        Self(rawValue: defaults.string(forKey: DefaultsKey.notchMotionProfile) ?? "") ?? .standard
+    }
+
+    func title(_ language: AppLanguage) -> String {
+        switch self {
+        case .standard: language == .es ? "Normal" : "Standard"
+        case .soft: language == .es ? "Suave" : "Soft"
+        case .elastic: language == .es ? "Elástica" : "Elastic"
+        }
+    }
+}
+
 /// Reserve enough backing space for both ends. The visible silhouette moves
 /// inside it; the native window only shrinks after the transition finishes.
 ///
@@ -2915,16 +2931,26 @@ enum NotchMotion {
     /// Sides closer than this to their targets read as settled.
     static let settledDistance: CGFloat = 0.5
 
-    static func spring(from: CGFloat, to: CGFloat, width: Bool, steady: Bool = false) -> Spring {
+    static func spring(from: CGFloat, to: CGFloat, width: Bool, steady: Bool = false,
+                       profile: NotchMotionProfile = .standard) -> Spring {
         if steady && width { return steadyWidth }
-        let spring = to > from ? (width ? growingWidth : growingHeight) : (width ? shrinkingWidth : shrinkingHeight)
+        var spring = to > from ? (width ? growingWidth : growingHeight) : (width ? shrinkingWidth : shrinkingHeight)
+        switch profile {
+        case .standard: break
+        case .soft:
+            spring.duration *= 1.08
+            spring.bounce = 0
+        case .elastic:
+            if to > from { spring.bounce += 0.14 }
+            else { spring.duration *= 0.86 }
+        }
         return spring.limited(travel: abs(to - from), limit: overshootLimit)
     }
 
     /// The spring carrying the island's sides, for controls that ride along them.
-    static func sideSpring(from: CGSize, to: CGSize) -> Spring {
-        from.width != to.width ? spring(from: from.width, to: to.width, width: true)
-            : spring(from: from.height, to: to.height, width: false)
+    static func sideSpring(from: CGSize, to: CGSize, profile: NotchMotionProfile = .standard) -> Spring {
+        from.width != to.width ? spring(from: from.width, to: to.width, width: true, profile: profile)
+            : spring(from: from.height, to: to.height, width: false, profile: profile)
     }
 
     /// The perceptual duration of the slower side that moves.
@@ -2935,10 +2961,11 @@ enum NotchMotion {
         return durations.max() ?? growingWidth.duration
     }
 
-    static func size(at time: TimeInterval, from: CGSize, to: CGSize, steady: Bool = false) -> CGSize {
+    static func size(at time: TimeInterval, from: CGSize, to: CGSize, steady: Bool = false,
+                     profile: NotchMotionProfile = .standard) -> CGSize {
         func side(_ start: CGFloat, _ end: CGFloat, width: Bool) -> CGFloat {
             guard start != end else { return end }
-            let spring = spring(from: start, to: end, width: width, steady: steady)
+            let spring = spring(from: start, to: end, width: width, steady: steady, profile: profile)
             return max(0, start + (end - start) * CGFloat(spring.progress(at: time)))
         }
         return CGSize(width: side(from.width, to.width, width: true), height: side(from.height, to.height, width: false))
@@ -2946,24 +2973,25 @@ enum NotchMotion {
 
     /// When every side that moves first comes within 1% of its travel from
     /// its target: the island has arrived, though it may still swing.
-    static func arrivalTime(from: CGSize, to: CGSize) -> TimeInterval {
+    static func arrivalTime(from: CGSize, to: CGSize, profile: NotchMotionProfile = .standard) -> TimeInterval {
         let sides = [(from.width, to.width, true), (from.height, to.height, false)].filter { $0.0 != $0.1 }
         let step = 1.0 / 240
         var time = step
-        while time < 2, !sides.allSatisfy({ spring(from: $0.0, to: $0.1, width: $0.2).progress(at: time) >= 0.99 }) {
+        while time < 2, !sides.allSatisfy({ spring(from: $0.0, to: $0.1, width: $0.2, profile: profile).progress(at: time) >= 0.99 }) {
             time += step
         }
         return sides.isEmpty ? 0 : time
     }
 
     /// When the size and centre stay within `settledDistance` of their targets for good.
-    static func settlingTime(from: CGSize, to: CGSize, steady: Bool = false, offset startOffset: CGFloat = 0) -> TimeInterval {
+    static func settlingTime(from: CGSize, to: CGSize, steady: Bool = false, offset startOffset: CGFloat = 0,
+                             profile: NotchMotionProfile = .standard) -> TimeInterval {
         let step = 1.0 / 240
         var settled = step
         var time = step
         while time < 2 {
-            let size = size(at: time, from: from, to: to, steady: steady)
-            let offset = offset(at: time, from: from, to: to, start: startOffset, steady: steady)
+            let size = size(at: time, from: from, to: to, steady: steady, profile: profile)
+            let offset = offset(at: time, from: from, to: to, start: startOffset, steady: steady, profile: profile)
             if abs(size.width - to.width) > settledDistance || abs(size.height - to.height) > settledDistance
                 || abs(offset) > settledDistance {
                 settled = time + step
@@ -2976,20 +3004,22 @@ enum NotchMotion {
     /// How far a moving island's centre still sits from its new one. It
     /// travels with the width's spring, or eases on its own when two notices
     /// have the same total width but different sides.
-    static func offset(at time: TimeInterval, from: CGSize, to: CGSize, start: CGFloat, steady: Bool = false) -> CGFloat {
+    static func offset(at time: TimeInterval, from: CGSize, to: CGSize, start: CGFloat, steady: Bool = false,
+                       profile: NotchMotionProfile = .standard) -> CGFloat {
         guard start != 0 else { return 0 }
-        let spring = from.width == to.width ? steadyWidth : spring(from: from.width, to: to.width, width: true, steady: steady)
+        let spring = from.width == to.width ? steadyWidth : spring(from: from.width, to: to.width, width: true, steady: steady, profile: profile)
         return start * CGFloat(1 - spring.progress(at: time))
     }
 
     /// Sizes at a steady rate, ending exactly at `to`, and where each falls
     /// within the duration, including a centre still on its way there.
     static func frames(from: CGSize, to: CGSize,
-                       steady: Bool = false, offset: CGFloat = 0) -> (sizes: [CGSize], keyTimes: [Double], duration: TimeInterval) {
-        let duration = settlingTime(from: from, to: to, steady: steady, offset: offset)
+                       steady: Bool = false, offset: CGFloat = 0,
+                       profile: NotchMotionProfile = .standard) -> (sizes: [CGSize], keyTimes: [Double], duration: TimeInterval) {
+        let duration = settlingTime(from: from, to: to, steady: steady, offset: offset, profile: profile)
         let count = max(1, Int((duration * 120).rounded(.up)))
         let keyTimes = (0...count).map { Double($0) / Double(count) }
-        let sizes = keyTimes.map { $0 == 1 ? to : size(at: duration * $0, from: from, to: to, steady: steady) }
+        let sizes = keyTimes.map { $0 == 1 ? to : size(at: duration * $0, from: from, to: to, steady: steady, profile: profile) }
         return (sizes, keyTimes, duration)
     }
 
@@ -3001,9 +3031,9 @@ enum NotchMotion {
                height: max(reserved.height, size.height))
     }
 
-    static func envelope(from: CGSize, to: CGSize) -> CGSize {
+    static func envelope(from: CGSize, to: CGSize, profile: NotchMotionProfile = .standard) -> CGSize {
         func side(_ start: CGFloat, _ end: CGFloat, width: Bool) -> CGFloat {
-            let swing = end > start ? spring(from: start, to: end, width: width).overshoot : 0
+            let swing = end > start ? spring(from: start, to: end, width: width, profile: profile).overshoot : 0
             guard swing > 0 else { return max(start, end) }
             return (end + (end - start) * CGFloat(swing)).rounded(.up)
         }
@@ -3033,14 +3063,17 @@ struct NotchMotionTimeline: Equatable {
     /// its new one. A motion with either is never carried on.
     let steady: Bool
     let offset: CGFloat
+    let profile: NotchMotionProfile
 
-    init(from: CGSize, to: CGSize, begin: CFTimeInterval, steady: Bool = false, offset: CGFloat = 0) {
+    init(from: CGSize, to: CGSize, begin: CFTimeInterval, steady: Bool = false, offset: CGFloat = 0,
+         profile: NotchMotionProfile = .standard) {
         width = [Leg(begin: begin, from: from.width, to: to.width)]
         height = [Leg(begin: begin, from: from.height, to: to.height)]
         self.begin = begin
         start = from
         self.steady = steady
         self.offset = offset
+        self.profile = profile
     }
 
     var target: CGSize { CGSize(width: width.last?.to ?? start.width, height: height.last?.to ?? start.height) }
@@ -3050,7 +3083,7 @@ struct NotchMotionTimeline: Equatable {
     }
 
     func offset(at time: CFTimeInterval) -> CGFloat {
-        NotchMotion.offset(at: time - begin, from: start, to: target, start: offset, steady: steady)
+        NotchMotion.offset(at: time - begin, from: start, to: target, start: offset, steady: steady, profile: profile)
     }
 
     /// The same motion with its latest move beginning at `time`: Core
@@ -3104,7 +3137,7 @@ struct NotchMotionTimeline: Equatable {
         guard let first = legs.first, let last = legs.last else { return 0 }
         let value = legs.reduce(first.from) { value, leg in
             guard leg.from != leg.to else { return value }
-            let spring = NotchMotion.spring(from: leg.from, to: leg.to, width: width, steady: steady)
+            let spring = NotchMotion.spring(from: leg.from, to: leg.to, width: width, steady: steady, profile: profile)
             return value + (leg.to - leg.from) * CGFloat(spring.progress(at: time - leg.begin))
         }
         // Swings that happen to coincide still pass the target no further

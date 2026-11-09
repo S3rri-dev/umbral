@@ -21,6 +21,7 @@ minimum="$(plutil -extract LSMinimumSystemVersion raw -o - "$info")"
 test "$(xcrun vtool -show-build "$binary" | awk '/minos/{print $2}')" = "$minimum"
 test -s "$resources/AppIcon.icns"
 test -s "$resources/BrandMark.png"
+test -s "$resources/CatMeow.wav"
 test -s "$resources/MenuBarIcon.png"
 test -s "$resources/MenuBarIcon@2x.png"
 test -s "$resources/LICENSE"
@@ -52,5 +53,7 @@ PY
 if [ "$(uname -m)" = arm64 ]; then
     "$binary" --selftest
     "$app/Contents/Library/LaunchServices/$helper" --selftest
+else
+    printf 'Pruebas internas omitidas en este host. Requieren Apple Silicon.\n'
 fi
 printf 'Bundle ARM64, recursos y firma local verificados.\n'

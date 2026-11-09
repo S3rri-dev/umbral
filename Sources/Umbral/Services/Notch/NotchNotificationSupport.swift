@@ -69,6 +69,13 @@ enum NotchNotificationSupport {
     static let bannerRoles: Set<String> = ["AXNotificationCenterAlert", "AXNotificationCenterBanner"]
     static let stackRoles: Set<String> = ["AXNotificationCenterAlertStack", "AXNotificationCenterBannerStack"]
     static let maximumItems = 50
+
+    static func isCallApplication(_ bundleIdentifier: String?) -> Bool {
+        switch bundleIdentifier?.lowercased() {
+        case "com.apple.facetime", "com.apple.mobilephone": true
+        default: false
+        }
+    }
     /// A brief grace avoids cutting off short alert tones when closing the
     /// original banner. This does not observe playback; longer sounds may stop.
     static let nativeCloseGrace: TimeInterval = 1.2

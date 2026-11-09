@@ -446,6 +446,14 @@ struct NotchView: View {
         Button(action: service.openSettings) {
             Label(l10n.s.menuSettings, systemImage: "gearshape")
         }
+        if service.catCareAvailable {
+            let care = NotchCatCareStrings(l10n.language)
+            Menu(care.care) {
+                Button(care.feed, action: service.feedCat)
+                Button(care.meow, action: service.meowCat)
+                Button(service.catNapping ? care.wake : care.nap, action: service.toggleCatNap)
+            }
+        }
         // An offer the row has no room for still reaches the island.
         if updateOffered {
             Button(action: service.showUpdate) {

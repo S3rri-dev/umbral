@@ -9,15 +9,17 @@ if let command = SettingsBackupSupport.command(in: CommandLine.arguments) {
     SettingsBackup.runCommandAndExit(command)
 }
 
+// The test must not migrate preferences or resume input-device recovery.
+if CommandLine.arguments.contains("--selftest") {
+    SelfTest.runAndExit()
+}
+
 SuperKeyMappingGuard.runIfRequestedAndExit()
 Defaults.register()
 NotchControlItem.keyboardLightIsSupported = { BrightnessService.keyboardLightIsSupported }
 MouseAccelerationGuard.runIfRequestedAndExit()
 MouseAccelerationService.recoverPendingAtLaunch()
 
-if CommandLine.arguments.contains("--selftest") {
-    SelfTest.runAndExit()
-}
 if CommandLine.arguments.contains("--sensors") {
     SensorDump.runAndExit()
 }

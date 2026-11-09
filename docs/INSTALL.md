@@ -1,8 +1,8 @@
 # Instalar Umbral
 
-Umbral 1.0.0 se compila para Mac con Apple Silicon y tiene como objetivo mínimo macOS 14. Consulta las [comprobaciones realizadas](VERIFICATION.md) para conocer los entornos probados.
+Umbral se compila para Mac con Apple Silicon y tiene como objetivo mínimo macOS 14. Consulta las [comprobaciones realizadas](VERIFICATION.md) para conocer los entornos probados.
 
-1. Descarga `Umbral-1.0.0-arm64.dmg` de [Releases](https://github.com/S3rri-dev/umbral/releases/latest).
+1. Descarga el DMG para ARM64 de [Releases](https://github.com/S3rri-dev/umbral/releases/latest).
 2. Abre la imagen y arrastra **Umbral.app** a **Aplicaciones**.
 3. Abre Umbral desde Aplicaciones.
 
@@ -13,5 +13,5 @@ La aplicación lleva **firma ad hoc**, sin Developer ID ni notarización. Gateke
 Para comprobar el DMG, colócalo junto a `SHA256SUMS.txt` y ejecuta este comando desde esa carpeta.
 
 ```sh
-grep -F '  Umbral-1.0.0-arm64.dmg' SHA256SUMS.txt | shasum -a 256 -c -
+grep -F -- '-arm64.dmg' SHA256SUMS.txt | shasum -a 256 -c -
 ```

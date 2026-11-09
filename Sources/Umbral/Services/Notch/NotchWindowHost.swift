@@ -364,15 +364,17 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         // carries on at its speed. Started again from where it was drawn, it
         // stalled; and asked for while SwiftUI drew new content, it reached the
         // screen only with that content and began from where it had been.
+        let profile = NotchMotionProfile.current()
         let carried = isAnimating && !revealing && !steady && !withdrawing && startOffset == 0
-            ? canvas.carriedMotion(to: size, at: CACurrentMediaTime()) : nil
+            ? canvas.carriedMotion(to: size, at: CACurrentMediaTime(), profile: profile) : nil
         let start = carried?.start ?? drawn
-        let motion = carried?.frames() ?? NotchMotion.frames(from: start, to: size, steady: steady, offset: startOffset)
+        let motion = carried?.frames() ?? NotchMotion.frames(from: start, to: size, steady: steady,
+                                                          offset: startOffset, profile: profile)
         let offsets = motion.keyTimes.map {
-            $0 == 1 ? 0 : NotchMotion.offset(at: motion.duration * $0, from: start, to: size, start: startOffset, steady: steady)
+            $0 == 1 ? 0 : NotchMotion.offset(at: motion.duration * $0, from: start, to: size, start: startOffset, steady: steady, profile: profile)
         }
         // Room for the swing past a larger target, and for everything already reserved.
-        var envelope = NotchMotion.envelope(from: start, to: size)
+        var envelope = NotchMotion.envelope(from: start, to: size, profile: profile)
         let reach = zip(motion.sizes, offsets).map { $0.width + 2 * abs($1) }.max() ?? 0
         envelope.width = max(envelope.width, reach.rounded(.up))
         let tallest = motion.sizes.map(\.height).max() ?? 0
@@ -413,7 +415,7 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         // The floating controls emerge once the island reaches its size, while it still swings.
         if quickAccessConfiguration != nil {
             quickAccessContainer?.motion.setVisible(true, animated: canAnimate,
-                                                    delay: NotchMotion.arrivalTime(from: start, to: size))
+                                                    delay: NotchMotion.arrivalTime(from: start, to: size, profile: profile))
         }
         let animation = CAKeyframeAnimation(keyPath: "path")
         animation.values = paths
@@ -434,7 +436,7 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         isAnimating = true
         canvas.animate(animation, from: paths.first, motion: carried ?? NotchMotionTimeline(
             from: start, to: size, begin: animation.beginTime > 0 ? animation.beginTime : CACurrentMediaTime(),
-            steady: steady, offset: startOffset))
+            steady: steady, offset: startOffset, profile: profile))
         CATransaction.commit()
         // The window already has its new frame; its layers go out at once,
         // not at the end of this turn of the run loop, so the screen never
@@ -1474,9 +1476,11 @@ private final class NotchCanvas: NSView {
 
     /// The running resize headed for `size` from `time` on, as Core Animation
     /// times it, or nil when it has not reached the screen or cannot carry on.
-    func carriedMotion(to size: CGSize, at time: CFTimeInterval) -> NotchMotionTimeline? {
+    func carriedMotion(to size: CGSize, at time: CFTimeInterval,
+                       profile: NotchMotionProfile) -> NotchMotionTimeline? {
         // The motion is stamped with the moment it reached the screen.
-        guard let timeline = motionTimeline, let began = silhouette.animation(forKey: Self.motionKey)?.beginTime,
+        guard let timeline = motionTimeline, timeline.profile == profile,
+              let began = silhouette.animation(forKey: Self.motionKey)?.beginTime,
               began > 0, began <= time else { return nil }
         return timeline.rebased(to: began).continued(to: size, at: time)
     }

@@ -357,6 +357,9 @@ final class NotchService: ObservableObject {
                                         notBefore: CFTimeInterval)?
     private var mascotReactionFlushWork: DispatchWorkItem?
     private var mascotReactionGate = NotchMascotReactionGate()
+    @Published private(set) var catCareReaction: NotchMascotReactionEvent?
+    @Published private(set) var catNapping = false
+    private var catNapWork: DispatchWorkItem?
     /// When music last brought it out, on the media clock.
     private var lastMascotGroove: CFTimeInterval = -.infinity
     /// Whether Keep Awake held the Mac up when the companion last looked,
@@ -487,7 +490,10 @@ final class NotchService: ObservableObject {
     var mascotAtRest: Bool { mascotOn && idleContent == .none && !mascotInBar && !mascotTucked }
 
     /// The face it keeps at rest: wide awake while Keep Awake holds the Mac up.
-    var mascotRestingMood: NotchMascotMood { KeepAwakeManager.shared.isActive ? .alert : .idle }
+    var mascotRestingMood: NotchMascotMood {
+        if catNapping, NotchMascotSupport.look().style == .cat { return .sleepy }
+        return KeepAwakeManager.shared.isActive ? .alert : .idle
+    }
 
     /// Whether the closed island on `geometry` draws the companion: resting,
     /// or strolling through, where its wings fit beside the camera. A capsule
@@ -1266,6 +1272,8 @@ final class NotchService: ObservableObject {
         NotchTimerService.shared.stop()
         NotchAccessoryService.shared.stop()
         NotchWatchService.shared.stop()
+        wakeCat()
+        catCareReaction = nil
         let cancelCapture = captureControlsCancel
         endCaptureControls()
         cancelCapture?()
@@ -3009,9 +3017,12 @@ final class NotchService: ObservableObject {
             && compactActivityGeometry.compactActivityWingWidth > 0
     }
 
-    /// The strip shows the song's name for the pointer resting on its cover.
+    /// The title fits when the strip can extend. Hovering over the cover can reveal it when the preference is off.
     var musicStripNamesSong: Bool {
-        musicStripNamed && musicStripAnswers(.cover)
+        if compactActivity == .music, UserDefaults.standard.bool(forKey: DefaultsKey.notchMusicAlwaysShowTitle) {
+            return true
+        }
+        return musicStripNamed && musicStripAnswers(.cover)
     }
 
     /// Beside a camera, the sides of a strip naming its song: the words and
@@ -4230,8 +4241,10 @@ final class NotchService: ObservableObject {
         if NotchSupport.routes(.systemNotification) {
             NotchNotificationService.shared.received.sink { [weak self] item in
                 guard let self else { return }
+                let isCallAlert = NotchNotificationService.shared.isCallAlert(item.id)
                 let shown = self.show(NotchNotice(event: .systemNotification, title: item.content.title,
-                                                 detail: item.content.body, symbol: "bell.fill", notification: item.content, notificationID: item.id))
+                                                  detail: item.content.body, symbol: isCallAlert ? "phone.fill" : "bell.fill",
+                                                  notification: item.content, notificationID: item.id))
                 if shown, !self.expanded, self.captureControls == nil, !self.dragPlaceholder {
                     NotchNotificationService.shared.hideNative(item.id)
                 }
@@ -4527,6 +4540,17 @@ extension NotchService {
             scheduleMascotVisit(after: NotchMascotSupport.nextVisitDelay())
             return
         }
+        if !asked, catNapping, NotchMascotSupport.look().style == .cat {
+            scheduleMascotVisit(after: NotchMascotSupport.nextVisitDelay())
+            return
+        }
+        if !asked, greeting == nil, mascotRestsInView, catCareAvailable,
+           NotchCatCare.isHungry(lastMeal: UserDefaults.standard.double(forKey: DefaultsKey.notchCatLastMeal))
+            || Int.random(in: 0..<4) == 0 {
+            meowCat()
+            scheduleMascotVisit(after: NotchMascotSupport.nextVisitDelay())
+            return
+        }
         // Without motion a stroll over an activity hides its strip for
         // seconds: it waits for the island to rest, and a hello asked for
         // plays in its own wing. Hidden in an island with nothing else to
@@ -4752,6 +4776,55 @@ extension NotchService {
         nextMascotVisitWork?.cancel()
         beginMascotVisit(greeting: .wink, asked: true)
         return mascotVisit != nil
+    }
+
+    var catCareAvailable: Bool {
+        NotchMascotSupport.isEnabled() && NotchMascotSupport.look().style == .cat
+    }
+
+    func feedCat() {
+        guard catCareAvailable else { return }
+        NotchCatCare.feed()
+        wakeCat()
+        playCatReaction(.love)
+    }
+
+    func meowCat() {
+        guard catCareAvailable else { return }
+        wakeCat()
+        playCatReaction(.meow)
+        NotchCatCare.playMeow()
+    }
+
+    func toggleCatNap() {
+        guard catCareAvailable else { return }
+        if catNapping {
+            wakeCat()
+            return
+        }
+        if mascotVisit != nil { endMascotVisit() }
+        noteMascotStirred()
+        catNapping = true
+        let work = DispatchWorkItem { [weak self] in self?.wakeCat() }
+        catNapWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 35, execute: work)
+    }
+
+    private func wakeCat() {
+        catNapWork?.cancel()
+        catNapWork = nil
+        if catNapping { catNapping = false }
+    }
+
+    private func playCatReaction(_ reaction: NotchMascotReaction) {
+        let event = NotchMascotReactionEvent(id: UUID(), reaction: reaction, start: CACurrentMediaTime())
+        catCareReaction = event
+        guard canHostMascotVisit(), mascotVisit == nil else { return }
+        if mascotRestsInView {
+            mascotReaction = event
+        } else {
+            beginMascotCameo(reaction)
+        }
     }
 
     /// A visit needs the closed island on screen with room for the companion,

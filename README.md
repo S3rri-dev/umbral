@@ -22,13 +22,15 @@ Español · [English](README.en.md)
 
 La bienvenida te deja elegir entre tres configuraciones o seleccionar las herramientas una por una. Desde **Ajustes → Funciones** puedes cambiar esa selección y revisar qué permisos usa cada herramienta.
 
+Dynamic Island muestra la música en reproducción y tiene un gato animado al que puedes dar de comer, mandar a dormir o pedirle un maullido. El movimiento y el sonido del gato se ajustan por separado.
+
 El catálogo reúne 43 herramientas. Incluye ventanas, Dock, portapapeles, audio, energía, grabación, Dynamic Island y monitorización del sistema. [Alcance de la versión](docs/ROADMAP.md)
 
 ## Instalar
 
-Abre el DMG de la versión que quieras instalar y arrastra **Umbral.app** a Aplicaciones. La 2.0.0 se puede construir localmente con `./scripts/package-dmg.sh`.
+Descarga el DMG y arrastra **Umbral.app** a Aplicaciones. Para compilar un DMG a partir del código fuente, ejecuta `./scripts/package-dmg.sh`.
 
-Apple Silicon. Objetivo mínimo de compilación macOS 14. El DMG local lleva firma ad hoc. [Instalación](docs/INSTALL.md) · [Verificación](docs/VERIFICATION.md)
+Apple Silicon. Objetivo mínimo de compilación macOS 14. El DMG lleva firma ad hoc. [Instalación](docs/INSTALL.md) · [Verificación](docs/VERIFICATION.md)
 
 ## Privacidad y permisos
 

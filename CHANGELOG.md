@@ -1,9 +1,11 @@
 # Historial
 
-## 2.0.0 · 2026-11-06
+## 2.0.0 · 2026-11-09
 
 - Nueva base para la bienvenida, los ajustes, el panel y las animaciones.
 - Catálogo de 43 herramientas instalables desde la app, con Dynamic Island y Monitor del sistema.
+- Dynamic Island muestra canción y artista en el notch, distingue avisos de Teléfono y FaceTime e incluye tres perfiles de movimiento.
+- El gato de Dynamic Island duerme, maúlla y se puede alimentar. Su sonido es opcional.
 - Identidad de Umbral y Fuga en las ventanas, el Dock y la barra de menús.
 - Grabación y edición local. El control manual de ventiladores queda condicionado a la firma del asistente.
 - Procedencia y licencia del código en [Software de terceros](THIRD_PARTY_NOTICES.md).

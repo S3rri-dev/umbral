@@ -12,7 +12,7 @@ import Foundation
 // the second activity sharing the closed island.
 
 enum NotchMascotStyle: String, CaseIterable, Identifiable {
-    case minimal, robot
+    case cat, minimal, robot
 
     var id: String { rawValue }
 }
@@ -139,6 +139,7 @@ enum NotchMascotReaction: String, CaseIterable {
     case ready
     /// Music started: smiling eyes and a bob to the beat.
     case groove
+    case meow
 
     /// About how long it plays, so the companion stays out for all of it
     /// when it comes out over an activity to play it.
@@ -156,6 +157,7 @@ enum NotchMascotReaction: String, CaseIterable {
         case .hush: return 1.0
         case .ready: return 1.0
         case .groove: return 1.6
+        case .meow: return 0.8
         }
     }
 }
@@ -316,6 +318,12 @@ struct NotchMascotFaceLayout: Equatable {
 
 extension NotchMascotLook {
     var face: NotchMascotFaceLayout {
+        if style == .cat {
+            return NotchMascotFaceLayout(leftEye: CGPoint(x: 0.34, y: 0.56), rightEye: CGPoint(x: 0.66, y: 0.56),
+                                         eyeSize: CGSize(width: 0.10, height: 0.14),
+                                         shineCenter: CGPoint(x: 0.32, y: 0.40), shineRadii: CGSize(width: 0.08, height: 0.04),
+                                         shineAngle: -0.3)
+        }
         if style == .robot {
             return NotchMascotFaceLayout(leftEye: CGPoint(x: 0.36, y: 0.63), rightEye: CGPoint(x: 0.64, y: 0.63),
                                          eyeSize: CGSize(width: 0.085, height: 0.16),
@@ -385,6 +393,37 @@ enum NotchMascotGeometry {
         return path
     }
 
+    static func catHead(size: CGFloat) -> CGPath {
+        let path = CGMutablePath()
+        func point(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: x * size, y: y * size) }
+        path.move(to: point(0.12, 0.48))
+        path.addQuadCurve(to: point(0.16, 0.09), control: point(0.06, 0.18))
+        path.addQuadCurve(to: point(0.39, 0.29), control: point(0.29, 0.12))
+        path.addQuadCurve(to: point(0.61, 0.29), control: point(0.50, 0.25))
+        path.addQuadCurve(to: point(0.84, 0.09), control: point(0.71, 0.12))
+        path.addQuadCurve(to: point(0.88, 0.48), control: point(0.94, 0.18))
+        path.addCurve(to: point(0.50, 0.93), control1: point(1.01, 0.72), control2: point(0.85, 0.93))
+        path.addCurve(to: point(0.12, 0.48), control1: point(0.15, 0.93), control2: point(-0.01, 0.72))
+        path.closeSubpath()
+        return path
+    }
+
+    static func catMarkings(size: CGFloat) -> CGPath {
+        let path = CGMutablePath()
+        func point(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: x * size, y: y * size) }
+        path.move(to: point(0.46, 0.65))
+        path.addQuadCurve(to: point(0.54, 0.65), control: point(0.5, 0.63))
+        path.addQuadCurve(to: point(0.46, 0.65), control: point(0.5, 0.74))
+        path.closeSubpath()
+        for offset in [0.0, 0.09] {
+            path.move(to: point(0.08, 0.63 + offset))
+            path.addLine(to: point(0.26, 0.67 + offset))
+            path.move(to: point(0.92, 0.63 + offset))
+            path.addLine(to: point(0.74, 0.67 + offset))
+        }
+        return path
+    }
+
     /// The robot's head, ears, antenna and face plate.
     struct Robot {
         let head: CGPath
@@ -404,6 +443,8 @@ enum NotchMascotGeometry {
             let parts = robot(size: 1)
             bounds = [parts.ears, parts.antenna, parts.bulb]
                 .reduce(parts.head.boundingBoxOfPath) { $0.union($1.boundingBoxOfPath) }
+        } else if look.style == .cat {
+            bounds = catHead(size: 1).boundingBoxOfPath
         } else {
             bounds = body(look.shape, size: 1).boundingBoxOfPath
         }
@@ -1261,7 +1302,7 @@ enum NotchMascotSupport {
 
     static func look(in defaults: UserDefaults = .standard) -> NotchMascotLook {
         NotchMascotLook(
-            style: NotchMascotStyle(rawValue: defaults.string(forKey: DefaultsKey.notchMascotStyle) ?? "") ?? .minimal,
+            style: NotchMascotStyle(rawValue: defaults.string(forKey: DefaultsKey.notchMascotStyle) ?? "") ?? .cat,
             shape: NotchMascotShape(rawValue: defaults.string(forKey: DefaultsKey.notchMascotShape) ?? "") ?? .ball,
             palette: NotchMascotPalette(rawValue: defaults.string(forKey: DefaultsKey.notchMascotPalette) ?? "") ?? .pearl)
     }

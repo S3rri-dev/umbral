@@ -96,7 +96,7 @@ struct NotchCapsuleNoticeView: View {
 
     private func banner(_ content: NotchNotificationContent) -> some View {
         HStack(spacing: CapsuleLayout.spacing) {
-            NotchNotificationAppIcon(app: content.app, size: CapsuleLayout.notificationIconSide(geometry))
+            NotchNoticeNotificationIcon(app: content.app, symbol: notice.symbol, size: CapsuleLayout.notificationIconSide(geometry))
             Text(content.compactTitle).capsuleTitle().layoutPriority(1)
             if !content.compactDetail.isEmpty {
                 Text(content.compactDetail).capsuleDetail()

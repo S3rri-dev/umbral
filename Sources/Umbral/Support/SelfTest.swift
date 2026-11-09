@@ -22,6 +22,34 @@ enum SelfTest {
             }
         }
 
+        let lastMeal = Date(timeIntervalSince1970: 1_000_000)
+        let meal = lastMeal.timeIntervalSince1970
+        if !NotchCatCare.isHungry(lastMeal: 0, at: lastMeal)
+            || NotchCatCare.isHungry(lastMeal: meal, at: lastMeal.addingTimeInterval(14_399))
+            || !NotchCatCare.isHungry(lastMeal: meal, at: lastMeal.addingTimeInterval(14_400)) {
+            failures.append("notch cat meal interval")
+        }
+
+        let compact = CGSize(width: 180, height: 32)
+        let expanded = CGSize(width: 400, height: 180)
+        let soft = NotchMotion.frames(from: compact, to: expanded, profile: .soft)
+        let normal = NotchMotion.frames(from: compact, to: expanded, profile: .standard)
+        let elastic = NotchMotion.frames(from: compact, to: expanded, profile: .elastic)
+        let elasticEnvelope = NotchMotion.envelope(from: compact, to: expanded, profile: .elastic)
+        if soft.sizes.contains(where: { $0.width > expanded.width || $0.height > expanded.height })
+            || elastic.sizes.last != expanded
+            || elastic.sizes.contains(where: { $0.width > elasticEnvelope.width || $0.height > elasticEnvelope.height })
+            || (elastic.sizes.map(\.width).max() ?? 0) <= (normal.sizes.map(\.width).max() ?? 0) {
+            failures.append("notch motion profiles")
+        }
+
+        if !NotchNotificationSupport.isCallApplication("com.apple.FaceTime")
+            || !NotchNotificationSupport.isCallApplication("com.apple.mobilephone")
+            || NotchNotificationSupport.isCallApplication("com.example.FaceTime")
+            || NotchNotificationSupport.isCallApplication(nil) {
+            failures.append("notch call alert sources")
+        }
+
         var assertionID = IOPMAssertionID(0)
         let result = IOPMAssertionCreateWithName("PreventUserIdleSystemSleep" as CFString,
                                                  IOPMAssertionLevel(kIOPMAssertionLevelOn),
@@ -105,11 +133,16 @@ enum SelfTest {
             warnings.append("no power metrics on this Mac")
         }
 
-        UserDefaults.standard.set("ok", forKey: "selftest")
-        if UserDefaults.standard.string(forKey: "selftest") != "ok" {
+        // Check defaults lookup with a process-local domain and no disk writes.
+        if let defaults = UserDefaults(suiteName: "io.github.s3rri-dev.umbral.selftest") {
+            let key = "umbral.selftest"
+            defaults.setVolatileDomain([key: "ok"], forName: UserDefaults.argumentDomain)
+            if defaults.string(forKey: key) != "ok" {
+                failures.append("UserDefaults")
+            }
+        } else {
             failures.append("UserDefaults")
         }
-        UserDefaults.standard.removeObject(forKey: "selftest")
 
         for style in KeepAwakeActiveIcon.allCases {
             guard let image = BlackHoleGlyph.activeImage(style: style, tint: .orange) else {

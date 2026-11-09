@@ -1,9 +1,9 @@
 # Umbral
 
-- Trabajar en español y mantener Umbral independiente de otros proyectos.
-- SwiftUI y AppKit para macOS Apple Silicon. Las preferencias de Umbral viven en su dominio propio de UserDefaults.
-- Distinguir fichas previstas de herramientas activas. Documentar permisos y cambios de sistema cuando se implementen.
-- No incluir credenciales, capturas con información personal ni archivos de versiones privadas.
-- Ejecutar `./tests/run.sh` y revisar la interfaz nativa para cambios de UI. Documentar solo pruebas realizadas.
-- Publicar como S3rri-dev tras comprobar la identidad de GitHub. Consultar `docs/RELEASING.md`.
-- Código GPL-3.0-or-later. Identidad visual según `TRADEMARKS.md`.
+- Trabaja en español. Comprueba la raíz de Git y el estado del árbol antes de editar. Este repositorio corresponde a `S3rri-dev/umbral`. Conserva los cambios en curso y mantén Umbral separado de los otros proyectos.
+- Umbral usa SwiftUI y AppKit en Apple Silicon. Conserva su dominio de preferencias y sus rutas de datos. Trabaja con copias y datos de prueba para cambios que escriban. Para cada versión que se saque, instala la compilación verificada en `/Applications/Umbral.app` en el Mac de desarrollo y conserva sus datos y preferencias.
+- Distingue una herramienta disponible en el catálogo de un servicio activo. Para cambios en el catálogo, revisa `AppFeature.catalog`, `FeatureRuntime`, la bienvenida, Ajustes y `SelfTest`. Documenta permisos y cambios del sistema en [Permisos](docs/PERMISSIONS.md). Consulta [Arquitectura](docs/ARCHITECTURE.md) y [Preferencias locales](docs/DATA.md).
+- Conserva GPL-3.0-or-later, los avisos de autoría y la identidad de [Umbral](TRADEMARKS.md). Excluye credenciales, datos personales y artefactos privados del repositorio.
+- Usa [`$verificar-umbral`](.agents/skills/verificar-umbral/SKILL.md) para verificar cambios. `./tests/run.sh` compila y comprueba el bundle. En Apple Silicon también ejecuta las pruebas internas. Para cambios de interfaz o interacción con macOS, verifica el recorrido pertinente en una copia aislada con `./scripts/prepare-ui-test.sh dist/Umbral.app`.
+- Revisa el diff y registra qué comprobaste, con qué comandos y en qué entorno. Separa la compilación, las pruebas internas y la revisión nativa. Una firma ad hoc y un objetivo de compilación macOS 14 dejan pendientes la notarización y una prueba de ejecución en macOS 14. Consulta [Verificación](docs/VERIFICATION.md).
+- Delega, crea commits, sube cambios y publica solo cuando el usuario lo pida. El flujo de cada versión incluye actualizar GitHub. Antes de escribir allí, comprueba que la cuenta activa sea `S3rri-dev`. Sigue [Publicar una versión](docs/RELEASING.md).

@@ -30,7 +30,7 @@ install -m 755 ".build/umbral/$executable" "$contents/MacOS/$executable"
 install -m 755 ".build/umbral/$adapter" "$contents/Frameworks/$adapter"
 install -m 755 ".build/umbral/$helper" "$contents/Library/LaunchServices/$helper"
 install -m 644 "Resources/$helper.plist" "$contents/Library/LaunchDaemons/$helper.plist"
-install -m 644 Resources/now-playing.pl Resources/agent-prices.json LICENSE THIRD_PARTY_NOTICES.md CHANGELOG.md "$resources"
+install -m 644 Resources/now-playing.pl Resources/agent-prices.json Resources/CatMeow.wav LICENSE THIRD_PARTY_NOTICES.md CHANGELOG.md "$resources"
 for localization in Resources/*.lproj; do
     ditto "$localization" "$resources/$(basename "$localization")"
 done
